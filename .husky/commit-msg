@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Get the commit message from the file argument
+commit_msg=$(cat "$1")
+
+# Regex to match conventional commit with optional ticket ID
+pattern="^(feat|fix|chore|docs|refactor|style|test)(\(PREP-[0-9]+\))?: "
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+  echo "❌ Error: Commit message does not follow the required format."
+  echo "Format options:"
+  echo "  - feat: <description>"
+  echo "  - feat(PREP-12): <description>"
+  echo "Allowed prefixes: feat, fix, chore, docs, refactor, style, test"
+  exit 1
+fi
