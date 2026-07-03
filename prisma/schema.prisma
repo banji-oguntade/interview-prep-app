@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  provider      String         // "google" | "github"
+  createdAt     DateTime       @default(now())
+  questionSets  QuestionSet[]
+  sessions      Session[]
+}
+
+model QuestionSet {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  questions   Json       // Full question array stored as JSONB
+  createdAt   DateTime   @default(now())
+  sessions    Session[]
+
+  @@index([userId])
+}
+
+model Session {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionSetId  String
+  questionSet    QuestionSet  @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+  status         SessionStatus @default(ACTIVE)
+  currentIndex   Int          @default(0)
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+  evaluations    Evaluation[]
+
+  @@index([userId])
+  @@index([questionSetId])
+}
+
+model Evaluation {
+  id              String    @id @default(cuid())
+  sessionId       String
+  session         Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId      String
+  answerText      String    @db.Text
+  timeSpentSeconds Int
+  score           Int?
+  resultJson      Json?     // Full EvaluationResponse stored as JSONB
+  status          EvalStatus @default(PENDING)
+  modelUsed       String?
+  createdAt       DateTime  @default(now())
+
+  @@index([sessionId])
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum EvalStatus {
+  PENDING
+  COMPLETE
+  FAILED
+}
